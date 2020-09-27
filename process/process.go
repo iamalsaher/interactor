@@ -24,20 +24,24 @@ func NewProcess(name string, args ...string) (*Details, string) {
 
 	logmsg := "File found in PATH"
 	path, lookPathErr := exec.LookPath(name)
+	cwd, cwdErr := os.Getwd()
+	if cwdErr != nil {
+		cwd = fmt.Sprintf("Error while determining working directory: %v", cwdErr.Error())
+	}
 
 	if lookPathErr != nil {
 		path, lookPathErr = exec.LookPath(filepath.FromSlash("./" + name))
 		if lookPathErr != nil {
-			return nil, fmt.Sprintf("File not present in PATH and %v", os.Getwd())
+			return nil, fmt.Sprintf("File not present in PATH and %v", cwd)
 		}
-		logmsg = fmt.Sprintf("File found in %v", os.Getwd())
+		logmsg = fmt.Sprintf("File found in %v", cwd)
 	}
 
 	details := new(Details)
 	details.path = path
 	details.args = args
 
-	return *details, logmsg
+	return details, logmsg
 }
 
 //SetEnviron is used to add environment variables to the process
@@ -47,7 +51,7 @@ func (d *Details) SetEnviron(env []string, def bool) {
 	if def {
 		d.env = os.Environ()
 	}
-	d.env = append(d.env, env)
+	d.env = append(d.env, env...)
 }
 
 //SetTimeout is used to add process timeout
@@ -69,11 +73,11 @@ func (d *Details) SetIO(stdin, stdout, stderr *os.File) {
 
 //Start is used to start the process
 func (d *Details) Start() {
-	attr = os.ProcAttr{
+	attr := os.ProcAttr{
 		Dir:   d.rundir,
 		Env:   d.env,
 		Sys:   nil,
 		Files: []*os.File{d.stdin, d.stdout, d.stderr},
 	}
-	os.StartProcess(d.path, d.args)
+	os.StartProcess(d.path, d.args, &attr)
 }
