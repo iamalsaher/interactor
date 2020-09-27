@@ -71,13 +71,13 @@ func (d *Details) SetIO(stdin, stdout, stderr *os.File) {
 	d.stderr = stderr
 }
 
-//Start is used to start the process
-func (d *Details) Start() {
+//Start is used to start the process and return process handle
+func (d *Details) Start() (*os.Process, error) {
 	attr := os.ProcAttr{
 		Dir:   d.rundir,
 		Env:   d.env,
 		Sys:   nil,
 		Files: []*os.File{d.stdin, d.stdout, d.stderr},
 	}
-	os.StartProcess(d.path, d.args, &attr)
+	return os.StartProcess(d.path, d.args, &attr)
 }
