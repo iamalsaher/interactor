@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 )
 
 //Details is used to store various details about the process
@@ -13,14 +14,14 @@ type Details struct {
 	args    []string
 	env     []string
 	rundir  string
-	timeout int64
+	timeout time.Duration
 	stdin   *os.File
 	stdout  *os.File
 	stderr  *os.File
 }
 
-//NewProcess is used to setup details about new process
-func NewProcess(name string, args ...string) (*Details, string) {
+//Process is used to setup details about new process
+func Process(name string, args ...string) (*Details, string) {
 
 	logmsg := "File found in PATH"
 	path, lookPathErr := exec.LookPath(name)
@@ -54,9 +55,9 @@ func (d *Details) SetEnviron(env []string, def bool) {
 	d.env = append(d.env, env...)
 }
 
-//SetTimeout is used to add process timeout
+//SetTimeout is used to add process timeout in milliseconds
 func (d *Details) SetTimeout(timeout int64) {
-	d.timeout = timeout
+	d.timeout = time.Duration(timeout) * time.Millisecond
 }
 
 //SetDirectory is used to set directory in which the process should run
@@ -71,13 +72,21 @@ func (d *Details) SetIO(stdin, stdout, stderr *os.File) {
 	d.stderr = stderr
 }
 
-//Start is used to start the process and return process handle
+//Start is used to finally Start the process
 func (d *Details) Start() (*os.Process, error) {
-	attr := os.ProcAttr{
+
+	h, e := os.StartProcess(d.path, d.args, &os.ProcAttr{
 		Dir:   d.rundir,
 		Env:   d.env,
 		Sys:   nil,
 		Files: []*os.File{d.stdin, d.stdout, d.stderr},
+	})
+
+	if e != nil && d.timeout > 0 {
+		time.AfterFunc(d.timeout, func() {
+			h.Kill()
+		})
 	}
-	return os.StartProcess(d.path, d.args, &attr)
+
+	return h, e
 }
