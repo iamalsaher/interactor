@@ -8,20 +8,8 @@ import (
 	"time"
 )
 
-//Details is used to store various details about the process
-type Details struct {
-	path    string
-	args    []string
-	env     []string
-	rundir  string
-	timeout time.Duration
-	stdin   *os.File
-	stdout  *os.File
-	stderr  *os.File
-}
-
-//Process is used to setup details about new process
-func Process(name string, args ...string) (*Details, string) {
+//NewProcess is used to setup details about new process
+func NewProcess(name string, args ...string) (*Process, string) {
 
 	logmsg := "File found in PATH"
 	path, lookPathErr := exec.LookPath(name)
@@ -42,51 +30,75 @@ func Process(name string, args ...string) (*Details, string) {
 	details.path = path
 	details.args = args
 
-	return details, logmsg
+	proc := new(Process)
+	proc.details = details
+
+	return proc, logmsg
 }
 
 //SetEnviron is used to add environment variables to the process
 //Set def to true to add default environment variables along with the ones specified in env
 //If def is False only the ones define in env shall be set
-func (d *Details) SetEnviron(env []string, def bool) {
+func (p *Process) SetEnviron(env []string, def bool) {
 	if def {
-		d.env = os.Environ()
+		p.details.env = os.Environ()
 	}
-	d.env = append(d.env, env...)
+	p.details.env = append(p.details.env, env...)
 }
 
 //SetTimeout is used to add process timeout in milliseconds
-func (d *Details) SetTimeout(timeout int64) {
-	d.timeout = time.Duration(timeout) * time.Millisecond
+func (p *Process) SetTimeout(timeout int64) {
+	p.details.timeout = time.Duration(timeout) * time.Millisecond
 }
 
 //SetDirectory is used to set directory in which the process should run
-func (d *Details) SetDirectory(dir string) {
-	d.rundir = dir
+func (p *Process) SetDirectory(dir string) {
+	p.details.rundir = dir
 }
 
 //SetIO is used to set stdin, stdout and stderr
-func (d *Details) SetIO(stdin, stdout, stderr *os.File) {
-	d.stdin = stdin
-	d.stdout = stdout
-	d.stderr = stderr
+func (p *Process) SetIO(stdin, stdout, stderr *os.File) error {
+	if stdin == nil && stdout == nil && stderr == nil {
+		return nil
+	}
+
+	io, ioErr := getIO(stdin, stdout, stderr)
+	if ioErr == nil {
+		p.io = io
+
+		if stdin != nil {
+			p.details.stdin = io.stdinR
+		}
+
+		if stdout != nil {
+			p.details.stdout = io.stdoutW
+		}
+
+		if stderr != nil {
+			p.details.stderr = io.stderrW
+		}
+
+	}
+
+	return ioErr
 }
 
 //Start is used to finally Start the process
-func (d *Details) Start() (*os.Process, error) {
+func (p *Process) Start() error {
 
-	h, e := os.StartProcess(d.path, d.args, &os.ProcAttr{
-		Dir:   d.rundir,
-		Env:   d.env,
+	h, e := os.StartProcess(p.details.path, p.details.args, &os.ProcAttr{
+		Dir:   p.details.rundir,
+		Env:   p.details.env,
 		Sys:   nil,
-		Files: []*os.File{d.stdin, d.stdout, d.stderr},
+		Files: []*os.File{p.details.stdin, p.details.stdout, p.details.stderr},
 	})
 
-	if e != nil && d.timeout > 0 {
-		time.AfterFunc(d.timeout, func() {
+	if e != nil && p.details.timeout > 0 {
+		time.AfterFunc(p.details.timeout, func() {
 			h.Kill()
 		})
 	}
 
-	return h, e
+	p.Handle = h
+	return e
 }
