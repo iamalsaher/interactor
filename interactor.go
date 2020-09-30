@@ -7,11 +7,12 @@ import (
 )
 
 func main() {
-	proc, log := process.NewProcess("/bin/sh")
+	proc, log := process.NewProcess("ls", "-la")
 	fmt.Println(log)
 	proc.SetDirectory("/tmp")
-	// proc.SetIO(os.Stdin, os.Stdout, os.Stderr)
+	proc.SetTimeout(2000)
+	proc.ConnectIO()
 	proc.Start()
-	// fmt.Println(proc.Recv(15))
 	proc.Handle.Wait()
+	proc.Show()
 }

@@ -1,18 +1,16 @@
 package process
 
 import (
+	"bytes"
 	"os"
 	"time"
 )
 
-//IO defines the pipes for stdin, stdout and stderr
-type IO struct {
-	stdinR  *os.File
-	stdinW  *os.File
-	stdoutR *os.File
-	stdoutW *os.File
-	stderrR *os.File
-	stderrW *os.File
+//Pipes defines the pipes for stdin, stdout and stderr
+type Pipes struct {
+	stdin  *os.File
+	stdout *os.File
+	stderr *os.File
 }
 
 //Details is used to store various details about the process
@@ -30,6 +28,8 @@ type Details struct {
 //Process contains all the info about the Process
 type Process struct {
 	details *Details
-	io      *IO
+	pipes   *Pipes
 	Handle  *os.Process
+	output  *bytes.Buffer
+	errors  *bytes.Buffer
 }

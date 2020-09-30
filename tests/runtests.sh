@@ -1,5 +1,5 @@
 #!/bin/bash
 
-gcc test.c -o test
+gcc test.c -o binary
 go run interactor.go
-rm test
+rm binary

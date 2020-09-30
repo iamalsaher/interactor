@@ -1,6 +1,7 @@
 package process
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -56,31 +57,37 @@ func (p *Process) SetDirectory(dir string) {
 	p.details.rundir = dir
 }
 
-//SetIO is used to set stdin, stdout and stderr
-func (p *Process) SetIO(stdin, stdout, stderr *os.File) error {
-	if stdin == nil && stdout == nil && stderr == nil {
-		return nil
+//ConnectIO is used to connect stdin, stdout and stderr
+func (p *Process) ConnectIO() error {
+
+	sInR, sInW, sInE := os.Pipe()
+	if sInE != nil {
+		return fmt.Errorf("Stdin pipe failure: %v", sInE)
 	}
 
-	io, ioErr := getIO(stdin, stdout, stderr)
-	if ioErr == nil {
-		p.io = io
-
-		if stdin != nil {
-			p.details.stdin = io.stdinR
-		}
-
-		if stdout != nil {
-			p.details.stdout = io.stdoutW
-		}
-
-		if stderr != nil {
-			p.details.stderr = io.stderrW
-		}
-
+	sOutR, sOutW, sOutE := os.Pipe()
+	if sOutE != nil {
+		return fmt.Errorf("Stdin pipe failure: %v", sOutE)
 	}
 
-	return ioErr
+	sErrR, sErrW, sErrE := os.Pipe()
+	if sErrE != nil {
+		return fmt.Errorf("Stdin pipe failure: %v", sErrE)
+	}
+
+	p.pipes = new(Pipes)
+	p.output = new(bytes.Buffer)
+	p.errors = new(bytes.Buffer)
+
+	p.details.stdin = sInR
+	p.details.stdout = sOutW
+	p.details.stderr = sErrW
+
+	p.pipes.stdin = sInW
+	p.pipes.stdout = sOutR
+	p.pipes.stderr = sErrR
+
+	return nil
 }
 
 //Start is used to finally Start the process
@@ -93,10 +100,17 @@ func (p *Process) Start() error {
 		Files: []*os.File{p.details.stdin, p.details.stdout, p.details.stderr},
 	})
 
-	if e != nil && p.details.timeout > 0 {
+	//Setup timeout function
+	if e == nil && p.details.timeout > 0 {
 		time.AfterFunc(p.details.timeout, func() {
 			h.Kill()
 		})
+	}
+
+	//Start Stdout and Stderr capture
+	if p.pipes != nil {
+		go copyToBufferFromFile(p.output, p.pipes.stdout)
+		go copyToBufferFromFile(p.errors, p.pipes.stderr)
 	}
 
 	p.Handle = h
