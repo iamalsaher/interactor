@@ -7,10 +7,10 @@ import (
 )
 
 func main() {
-	proc, log := process.NewProcess("ls", "-la")
+	proc, log := process.NewProcess("binary")
 	fmt.Println(log)
-	proc.SetDirectory("/tmp")
-	proc.SetTimeout(2000)
+	// proc.SetDirectory("/tmp")
+	// proc.SetTimeout(2000)
 	proc.ConnectIO()
 	proc.Start()
 	proc.Handle.Wait()

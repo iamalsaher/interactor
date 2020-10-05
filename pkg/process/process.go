@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"github.com/iamalsaher/interactor/pkg/pty"
 )
 
 //NewProcess is used to setup details about new process
@@ -60,32 +62,32 @@ func (p *Process) SetDirectory(dir string) {
 //ConnectIO is used to connect stdin, stdout and stderr
 func (p *Process) ConnectIO() error {
 
-	sInR, sInW, sInE := os.Pipe()
-	if sInE != nil {
-		return fmt.Errorf("Stdin pipe failure: %v", sInE)
+	stdin, err := pty.NewPTY()
+	if err != nil {
+		return err
 	}
 
-	sOutR, sOutW, sOutE := os.Pipe()
-	if sOutE != nil {
-		return fmt.Errorf("Stdin pipe failure: %v", sOutE)
+	stdout, err := pty.NewPTY()
+	if err != nil {
+		return err
 	}
 
-	sErrR, sErrW, sErrE := os.Pipe()
-	if sErrE != nil {
-		return fmt.Errorf("Stdin pipe failure: %v", sErrE)
+	stderr, err := pty.NewPTY()
+	if err != nil {
+		return err
 	}
 
 	p.pipes = new(Pipes)
 	p.output = new(bytes.Buffer)
 	p.errors = new(bytes.Buffer)
 
-	p.details.stdin = sInR
-	p.details.stdout = sOutW
-	p.details.stderr = sErrW
+	p.details.stdin = stdin.Master
+	p.details.stdout = stdout.Slave
+	p.details.stderr = stderr.Slave
 
-	p.pipes.stdin = sInW
-	p.pipes.stdout = sOutR
-	p.pipes.stderr = sErrR
+	p.pipes.stdin = stdin.Slave
+	p.pipes.stdout = stdout.Master
+	p.pipes.stderr = stderr.Master
 
 	return nil
 }
