@@ -1,6 +1,7 @@
 package pty
 
 import (
+	"fmt"
 	"os"
 	"unsafe"
 
@@ -17,6 +18,11 @@ var (
 type PTY struct {
 	Master *os.File
 	Slave  *os.File
+
+	size    windows.Coord
+	phPC    *windows.Handle
+	hInput  windows.Handle
+	hOutput windows.Handle
 }
 
 //NewPTY returns a master and slave file descriptor for a pty
@@ -24,23 +30,24 @@ type PTY struct {
 func NewPTY() (*PTY, error) {
 
 	var (
-		hInput   windows.Handle
-		hOutput  windows.Handle
 		hPipeIn  windows.Handle
 		hPipeOut windows.Handle
 	)
 
-	if err := windows.CreatePipe(&hPipeIn, &hInput, nil, 0); err != nil {
+	p := PTY{phPC: new(windows.Handle)}
+
+	if err := windows.CreatePipe(&hPipeIn, &p.hInput, nil, 0); err != nil {
 		panic(err)
 	}
 
-	if err := windows.CreatePipe(&hPipeOut, &hOutput, nil, 0); err != nil {
+	if err := windows.CreatePipe(&hPipeOut, &p.hOutput, nil, 0); err != nil {
 		panic(err)
 	}
 
-	r1, _, e := createPseudoConsole.Call(uintptr(unsafe.Pointer(new(windows.Coord))), uintptr(hPipeIn), uintptr(hPipeOut), 0, uintptr(unsafe.Pointer(new(windows.Handle))))
-	if r1 != uintptr(windows.S_OK) {
-		return nil, e
+	r1, _, e := createPseudoConsole.Call(uintptr(unsafe.Pointer(&p.size)), uintptr(hPipeIn), uintptr(hPipeOut), 0, uintptr(unsafe.Pointer(p.phPC)))
+	if r1 != 0 {
+		fmt.Printf("%x\n", r1)
+		return nil, fmt.Errorf("Code: 0x%x Error:%v", r1, e)
 	}
 
 	if hPipeIn != windows.InvalidHandle {
@@ -51,8 +58,20 @@ func NewPTY() (*PTY, error) {
 		windows.CloseHandle(hPipeOut)
 	}
 
-	master := os.NewFile(uintptr(hInput), "|0")
-	slave := os.NewFile(uintptr(hInput), "|1")
+	p.Master = os.NewFile(uintptr(p.hInput), "|0")
+	p.Slave = os.NewFile(uintptr(p.hOutput), "|1")
 
-	return &PTY{Master: master, Slave: slave}, nil
+	return &p, nil
+}
+
+//Close is used to release all resources allocated to PTY
+func (p *PTY) Close() error {
+	r1, _, e := closePseudoConsole.Call(uintptr(*p.phPC))
+	if r1 == 0 {
+		return fmt.Errorf("Code: 0x%x Error:%v", r1, e)
+	}
+
+	p.Master.Close()
+	p.Slave.Close()
+	return nil
 }

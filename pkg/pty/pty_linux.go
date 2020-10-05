@@ -38,6 +38,7 @@ func (p *PTY) getPTSName() (string, error) {
 	return "/dev/pts/" + strconv.Itoa(int(n)), nil
 }
 
+//Close is used to close the PTY
 func (p *PTY) Close() error {
 	se := fmt.Errorf("Slave FD nil")
 	if p.Slave != nil {
