@@ -3,16 +3,14 @@ package main
 import (
 	"fmt"
 
-	"github.com/iamalsaher/interactor/pkg/process"
+	"github.com/iamalsaher/interactor/pkg/pty"
 )
 
 func main() {
-	proc, log := process.NewProcess("ls", "-la")
-	fmt.Println(log)
-	proc.SetDirectory("/tmp")
-	proc.SetTimeout(2000)
-	proc.ConnectIO()
-	proc.Start()
-	proc.Handle.Wait()
-	proc.Show()
+	p, e := pty.NewPTY()
+	if e != nil {
+		panic(e)
+	}
+	fmt.Println(p.Master.Fd())
+	fmt.Println(p.Slave.Fd())
 }
