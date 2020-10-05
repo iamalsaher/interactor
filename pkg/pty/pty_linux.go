@@ -38,31 +38,6 @@ func (p *PTY) getPTSName() (string, error) {
 	return "/dev/pts/" + strconv.Itoa(int(n)), nil
 }
 
-//Close is used to close the PTY
-func (p *PTY) Close() error {
-	se := fmt.Errorf("Slave FD nil")
-	if p.Slave != nil {
-		se = p.Slave.Close()
-	}
-
-	me := fmt.Errorf("Master FD nil")
-	if p.Slave != nil {
-		se = p.Slave.Close()
-	}
-
-	if se != nil || me != nil {
-		var errs []string
-		if se != nil {
-			errs = append(errs, "Slave: "+se.Error())
-		}
-		if me != nil {
-			errs = append(errs, "Master: "+me.Error())
-		}
-		return errors.New(strings.Join(errs, " "))
-	}
-	return nil
-}
-
 //NewPTY returns a master and slave file descriptor for a pty
 //https://github.com/google/goterm/blob/master/term/termios.go
 func NewPTY() (*PTY, error) {
@@ -95,4 +70,29 @@ func NewPTY() (*PTY, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+//Close is used to close the PTY
+func (p *PTY) Close() error {
+	se := fmt.Errorf("Slave FD nil")
+	if p.Slave != nil {
+		se = p.Slave.Close()
+	}
+
+	me := fmt.Errorf("Master FD nil")
+	if p.Master != nil {
+		me = p.Master.Close()
+	}
+
+	if se != nil || me != nil {
+		var errs []string
+		if se != nil {
+			errs = append(errs, "Slave: "+se.Error())
+		}
+		if me != nil {
+			errs = append(errs, "Master: "+me.Error())
+		}
+		return errors.New(strings.Join(errs, " "))
+	}
+	return nil
 }

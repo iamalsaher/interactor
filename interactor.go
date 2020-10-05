@@ -13,4 +13,8 @@ func main() {
 	}
 	fmt.Println(p.Master.Fd())
 	fmt.Println(p.Slave.Fd())
+
+	if e := p.Close(); e != nil {
+		panic(e)
+	}
 }
