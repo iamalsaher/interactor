@@ -8,7 +8,7 @@ import (
 )
 
 //NewProcess is used to setup details about new process
-func NewProcess(path string, args ...string) {
+func NewProcess(path string, args ...string) *Process {
 
 	details := new(Details)
 	details.path = path
@@ -16,6 +16,8 @@ func NewProcess(path string, args ...string) {
 
 	proc := new(Process)
 	proc.details = details
+
+	return proc
 }
 
 //SetEnviron is used to add environment variables to the process
@@ -39,6 +41,7 @@ func (p *Process) SetDirectory(dir string) {
 }
 
 //ConnectIO is used to connect stdin, stdout and stderr
+//If forcePTY is set then function errors out if pty cannot be aquired
 func (p *Process) ConnectIO(forcePTY bool) error {
 
 	if pty, err := pty.NewPTY(); err == nil {
