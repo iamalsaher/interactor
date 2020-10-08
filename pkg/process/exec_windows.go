@@ -2,6 +2,8 @@ package process
 
 import (
 	"os"
+	"reflect"
+	"runtime"
 	"strings"
 	"syscall"
 	"unicode/utf16"
@@ -157,6 +159,35 @@ func addCriticalEnv(env []string) []string {
 		}
 	}
 	return append(env, "SYSTEMROOT="+os.Getenv("SYSTEMROOT"))
+}
+
+/*
+https://golang.org/src/os/exec.go
+https://golang.org/src/os/exec_posix.go
+https://golang.org/src/syscall/exec_windows.go
+https://golang.org/src/os/exec.go
+https://golang.org/src/os/exec_windows.go
+https://stackoverflow.com/questions/17981651/is-there-any-way-to-access-private-fields-of-a-struct-from-another-package
+*/
+
+func newConPTYProcess(argv0 string, argv []string, dir string, env []string, six *pty.StartupInfoEx) (*os.Process, error) {
+	p, h, e := createProcessWithConpty(argv0, argv, dir, env, six)
+	if e != nil {
+		return nil, e
+	}
+	proc := &os.Process{Pid: p}
+
+	//Update the handle
+	ptr := reflect.ValueOf(proc)
+	val := reflect.Indirect(ptr)
+
+	member := val.FieldByName("handle")
+	ptrToHandle := unsafe.Pointer(member.UnsafeAddr())
+	realPtrToHandle := (*uintptr)(ptrToHandle)
+	*realPtrToHandle = h
+
+	runtime.SetFinalizer(proc, (*os.Process).Release)
+	return proc, nil
 }
 
 func createProcessWithConpty(argv0 string, argv []string, dir string, env []string, six *pty.StartupInfoEx) (pid int, handle uintptr, err error) {
