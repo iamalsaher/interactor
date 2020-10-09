@@ -10,22 +10,16 @@ import (
 //NewProcess is used to setup details about new process
 func NewProcess(path string, args ...string) *Process {
 
-	details := new(Details)
-	details.path = path
-	details.args = args
-
-	proc := new(Process)
-	proc.details = details
-
-	return proc
+	details := &Details{path: path, args: args, env: os.Environ()}
+	return &Process{details: details}
 }
 
 //SetEnviron is used to add environment variables to the process
-//Set def to true to add default environment variables along with the ones specified in env
-//If def is False only the ones define in env shall be set
-func (p *Process) SetEnviron(env []string, def bool) {
-	if def {
-		p.details.env = os.Environ()
+//Set keepDefaultEnvironment to false to remove default environment variables
+//If keepDefaultEnvironment is False only the ones define in env shall be set
+func (p *Process) SetEnviron(env []string, keepDefaultEnvironment bool) {
+	if !keepDefaultEnvironment {
+		p.details.env = nil
 	}
 	p.details.env = append(p.details.env, env...)
 }

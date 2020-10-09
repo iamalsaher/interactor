@@ -60,6 +60,8 @@ func NewPTY() (*PTY, error) {
 	const procThreadAttributePseudoconsole uintptr = 0x00020016
 
 	p := PTY{phPC: new(windows.Handle)}
+	p.size.X = 80
+	p.size.Y = 32
 
 	if err := windows.CreatePipe(&hPipeIn, &p.hInput, nil, 0); err != nil {
 		panic(err)
@@ -92,7 +94,7 @@ func NewPTY() (*PTY, error) {
 	p.SIX.StartupInfo.Cb = uint32(unsafe.Sizeof(p.SIX))
 
 	// Discover the size required for the list
-	initializeProcThreadAttributeList.Call(0, 1, uintptr(unsafe.Pointer(&attrListSize)))
+	initializeProcThreadAttributeList.Call(0, 1, 0, uintptr(unsafe.Pointer(&attrListSize)))
 
 	// Allocate memory to represent the list
 	p.attrListBuffer = make([]byte, attrListSize)
@@ -101,17 +103,16 @@ func NewPTY() (*PTY, error) {
 	p.SIX.lpAttributeList = windows.Handle(unsafe.Pointer(&p.attrListBuffer[0]))
 
 	// Initialize the list memory location
-	r, _, e = initializeProcThreadAttributeList.Call(uintptr(p.SIX.lpAttributeList), 1, uintptr(unsafe.Pointer(&attrListSize)))
+	r, _, e = initializeProcThreadAttributeList.Call(uintptr(p.SIX.lpAttributeList), 1, 0, uintptr(unsafe.Pointer(&attrListSize)))
 	if r == 0 {
 		return nil, fmt.Errorf("initializeProcThreadAttributeList Error:%v Code: 0x%x", e, r)
 	}
 
 	// Set the pseudoconsole information into the list
-	r, _, e = updateProcThreadAttribute.Call(uintptr(p.SIX.lpAttributeList), 0, procThreadAttributePseudoconsole, uintptr(*p.phPC), uintptr(unsafe.Sizeof(*p.phPC)), 0, 0)
+	r, _, e = updateProcThreadAttribute.Call(uintptr(p.SIX.lpAttributeList), 0, procThreadAttributePseudoconsole, uintptr(*p.phPC), unsafe.Sizeof(*p.phPC), 0, 0)
 	if r == 0 {
 		return nil, fmt.Errorf("updateProcThreadAttribute Error:%v Code: 0x%x", e, r)
 	}
-
 	return &p, nil
 }
 

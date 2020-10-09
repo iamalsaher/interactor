@@ -14,9 +14,6 @@ type Details struct {
 	env     []string
 	rundir  string
 	timeout time.Duration
-	stdin   *os.File
-	stdout  *os.File
-	stderr  *os.File
 }
 
 //Pipes defines the pipes for stdin, stdout and stderr
@@ -28,4 +25,5 @@ type Process struct {
 	details *Details
 	pty     *pty.PTY
 	pipe    *Pipes
+	Proc    *os.Process
 }

@@ -2,8 +2,6 @@ package process
 
 import (
 	"os"
-	"reflect"
-	"runtime"
 	"strings"
 	"syscall"
 	"unicode/utf16"
@@ -170,24 +168,27 @@ https://golang.org/src/os/exec_windows.go
 https://stackoverflow.com/questions/17981651/is-there-any-way-to-access-private-fields-of-a-struct-from-another-package
 */
 
+//NewConPTYProcess is used to start a conpty process
 func newConPTYProcess(argv0 string, argv []string, dir string, env []string, six *pty.StartupInfoEx) (*os.Process, error) {
-	p, h, e := createProcessWithConpty(argv0, argv, dir, env, six)
+	p, _, e := createProcessWithConpty(argv0, argv, dir, env, six)
 	if e != nil {
 		return nil, e
 	}
-	proc := &os.Process{Pid: p}
+	return os.FindProcess(p)
+	// proc := &os.Process{Pid: p}
 
-	//Update the handle
-	ptr := reflect.ValueOf(proc)
-	val := reflect.Indirect(ptr)
+	// //Update the handle
+	// ptr := reflect.ValueOf(proc)
+	// val := reflect.Indirect(ptr)
 
-	member := val.FieldByName("handle")
-	ptrToHandle := unsafe.Pointer(member.UnsafeAddr())
-	realPtrToHandle := (*uintptr)(ptrToHandle)
-	*realPtrToHandle = h
+	// member := val.FieldByName("handle")
+	// ptrToHandle := unsafe.Pointer(member.UnsafeAddr())
+	// realPtrToHandle := (*uintptr)(ptrToHandle)
+	// *realPtrToHandle = h
 
-	runtime.SetFinalizer(proc, (*os.Process).Release)
-	return proc, nil
+	// runtime.SetFinalizer(proc, (*os.Process).Release)
+	// return proc, nil
+
 }
 
 func createProcessWithConpty(argv0 string, argv []string, dir string, env []string, six *pty.StartupInfoEx) (pid int, handle uintptr, err error) {
@@ -205,7 +206,7 @@ func createProcessWithConpty(argv0 string, argv []string, dir string, env []stri
 		cmdline = makeCmdLine(argv)
 		argvp   *uint16
 		dirp    *uint16
-		zeroSec syscall.ProcAttr
+		zeroSec windows.SecurityAttributes
 	)
 
 	if len(dir) != 0 {
@@ -229,7 +230,7 @@ func createProcessWithConpty(argv0 string, argv []string, dir string, env []stri
 
 	six.StartupInfo.Flags = windows.STARTF_USESTDHANDLES
 	pi := new(windows.ProcessInformation)
-	flags := uint32(windows.CREATE_UNICODE_ENVIRONMENT) | uint32(extendedStartupinfoPresent)
+	flags := uint32(windows.CREATE_UNICODE_ENVIRONMENT) | extendedStartupinfoPresent
 	pSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec)), InheritHandle: 1}
 	tSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec)), InheritHandle: 1}
 
