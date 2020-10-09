@@ -25,5 +25,6 @@ type Process struct {
 	details *Details
 	pty     *pty.PTY
 	pipe    *Pipes
-	Proc    *os.Process
+	proc    *os.Process
+	PID     int
 }

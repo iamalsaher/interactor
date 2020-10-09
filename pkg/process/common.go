@@ -34,8 +34,11 @@ func (p *Process) SetDirectory(dir string) {
 	p.details.rundir = dir
 }
 
-//ConnectIO is used to connect stdin, stdout and stderr
-//If forcePTY is set then function errors out if pty cannot be aquired
+/*
+ConnectIO is used to connect the input output handles
+It attempts PTY as a primary mechanism else falls back to Pipes
+If forcePTY is set then function errors out if pty cannot be aquired
+*/
 func (p *Process) ConnectIO(forcePTY bool) error {
 
 	if pty, err := pty.NewPTY(); err == nil {
@@ -44,8 +47,30 @@ func (p *Process) ConnectIO(forcePTY bool) error {
 	} else if forcePTY {
 		return err
 	}
-	return SetPipeIO(p)
+	return setPipeIO(p)
 }
 
-//SetPipeIO is used to set OS PIPE based input output
-func SetPipeIO(p *Process) error { return nil }
+//Kill is a wrapper around os.Process.Kill()
+func (p *Process) Kill() error {
+	if p.pty != nil {
+		p.pty.Close()
+	}
+	return p.proc.Kill()
+}
+
+//Release is a wrapper around os.Process.Release()
+func (p *Process) Release() error {
+	return p.proc.Release()
+}
+
+//Signal is a wrapper around os.Process.Signal()
+func (p *Process) Signal(sig os.Signal) error {
+	return p.proc.Signal(sig)
+}
+
+//Wait is a wrapper around os.Process.Wait()
+func (p *Process) Wait() (*os.ProcessState, error) {
+	return p.proc.Wait()
+}
+
+func setPipeIO(p *Process) error { return nil }

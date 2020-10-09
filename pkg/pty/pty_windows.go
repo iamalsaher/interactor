@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
+	"golang.org/x/sys/windows/registry"
 )
 
 var (
@@ -19,6 +21,8 @@ var (
 	updateProcThreadAttribute         = kernel32.NewProc("UpdateProcThreadAttribute")
 	deleteProcThreadAttributeList     = kernel32.NewProc("DeleteProcThreadAttributeList")
 )
+
+const minConPtySupportVersion float64 = 6.3
 
 //StartupInfoEx exposes the Extended StartupInfo which can be passed to CreateProcess
 type StartupInfoEx struct {
@@ -41,6 +45,23 @@ type PTY struct {
 }
 
 func conPTYSupport() bool {
+
+	k, e := registry.OpenKey(registry.LOCAL_MACHINE, `Software`+`\Microsoft`+`\Windows NT`+`\CurrentVersion`, registry.QUERY_VALUE)
+	if e != nil {
+		panic(e)
+	}
+
+	v, _, e := k.GetStringValue("CurrentVersion")
+	k.Close()
+
+	s, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		panic(e)
+	}
+
+	if s < minConPtySupportVersion {
+		return false
+	}
 	return true
 }
 
