@@ -11,7 +11,7 @@ import (
 type Process struct {
 	details *Details
 	pty     *pty.PTY
-	pipe    *Pipes
+	Pipe    *Pipes
 	proc    *os.Process
 	PID     int
 }
@@ -25,7 +25,7 @@ func (p *Process) Start() (e error) {
 			Dir:   p.details.rundir,
 			Env:   p.details.env,
 			Sys:   nil,
-			Files: []*os.File{p.pipe.StdinR, p.pipe.StdoutW, p.pipe.StderrW},
+			Files: []*os.File{p.Pipe.stdinR, p.Pipe.stdoutW, p.Pipe.stderrW},
 		})
 	}
 
@@ -42,10 +42,6 @@ func (p *Process) Start() (e error) {
 	return e
 }
 
-func (p *Process) GetIO() (*os.File, *os.File) {
-	return p.pty.Input, p.pty.Output
-}
-
 /*
 ConnectIO is used to connect the input output handles
 It attempts PTY as a primary mechanism else falls back to Pipes
@@ -53,8 +49,13 @@ If forcePTY is set then function errors out if pty cannot be aquired
 */
 func (p *Process) ConnectIO(forcePTY bool) error {
 
+	p.Pipe = new(Pipes)
+
 	if pty, err := pty.NewPTY(); err == nil {
 		p.pty = pty
+		p.Pipe.StdinW = pty.Input
+		p.Pipe.StdoutR = pty.Output
+		p.Pipe.StderrR = pty.Output
 		return nil
 	} else if forcePTY {
 		return err

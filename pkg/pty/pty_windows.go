@@ -162,8 +162,8 @@ func (p *PTY) Close() error {
 		errs = append(errs, fmt.Sprintf("closePseudoConsole Error:%v Code: 0x%x", e, r))
 	}
 
-	p.Master.Close()
-	p.Slave.Close()
+	p.Input.Close()
+	p.Output.Close()
 
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, " "))

@@ -16,12 +16,12 @@ type Details struct {
 
 //Pipes defines the pipes for stdin, stdout and stderr
 type Pipes struct {
-	StdinR *os.File
+	stdinR *os.File
 	StdinW *os.File
 
 	StdoutR *os.File
-	StdoutW *os.File
+	stdoutW *os.File
 
 	StderrR *os.File
-	StderrW *os.File
+	stderrW *os.File
 }
