@@ -32,8 +32,8 @@ type StartupInfoEx struct {
 
 //PTY is the structure which contains the input and output files to pass to processes
 type PTY struct {
-	Master *os.File
-	Slave  *os.File
+	Input  *os.File
+	Output *os.File
 	SIX    StartupInfoEx
 
 	size    windows.Coord
@@ -105,8 +105,8 @@ func NewPTY() (*PTY, error) {
 		windows.CloseHandle(hPipeOut)
 	}
 
-	p.Master = os.NewFile(uintptr(p.hInput), "|0")
-	p.Slave = os.NewFile(uintptr(p.hOutput), "|1")
+	p.Input = os.NewFile(uintptr(p.hInput), "|0")
+	p.Output = os.NewFile(uintptr(p.hOutput), "|1")
 
 	//Setting up the process structure to connect conpty to the process
 	var attrListSize uint64

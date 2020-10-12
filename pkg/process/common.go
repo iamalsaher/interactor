@@ -3,8 +3,6 @@ package process
 import (
 	"os"
 	"time"
-
-	"github.com/iamalsaher/interactor/pkg/pty"
 )
 
 //NewProcess is used to setup details about new process
@@ -32,30 +30,6 @@ func (p *Process) SetTimeout(timeout int64) {
 //SetDirectory is used to set directory in which the process should run
 func (p *Process) SetDirectory(dir string) {
 	p.details.rundir = dir
-}
-
-/*
-ConnectIO is used to connect the input output handles
-It attempts PTY as a primary mechanism else falls back to Pipes
-If forcePTY is set then function errors out if pty cannot be aquired
-*/
-func (p *Process) ConnectIO(forcePTY bool) error {
-
-	if pty, err := pty.NewPTY(); err == nil {
-		p.pty = pty
-		return nil
-	} else if forcePTY {
-		return err
-	}
-	return setPipeIO(p)
-}
-
-//Kill is a wrapper around os.Process.Kill()
-func (p *Process) Kill() error {
-	if p.pty != nil {
-		p.pty.Close()
-	}
-	return p.proc.Kill()
 }
 
 //Release is a wrapper around os.Process.Release()
