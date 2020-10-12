@@ -22,7 +22,7 @@ func (p *Process) Start() (e error) {
 		Dir:   p.details.rundir,
 		Env:   p.details.env,
 		Sys:   nil,
-		Files: []*os.File{p.pipe.StdinR, p.pipe.StdoutW, p.pipe.StderrW},
+		Files: []*os.File{p.pipe.stdinR, p.pipe.stdoutW, p.pipe.stderrW},
 	})
 
 	if e == nil {
@@ -65,10 +65,10 @@ func (p *Process) ConnectIO(errPTY, forcePTY bool) error {
 		return setPipeIO(p)
 	}
 
-	p.pipe.StdinR = in.Slave
+	p.pipe.stdinR = in.Slave
 	p.pipe.StdinW = in.Master
 	p.pipe.StdoutR = out.Master
-	p.pipe.StdoutR = out.Slave
+	p.pipe.stdoutW = out.Slave
 
 	if errPTY {
 		errout, err := pty.NewPTY()
@@ -80,11 +80,11 @@ func (p *Process) ConnectIO(errPTY, forcePTY bool) error {
 			return setPipeIO(p)
 		}
 		p.pipe.StderrR = errout.Master
-		p.pipe.StderrR = errout.Slave
+		p.pipe.stderrW = errout.Slave
 
 	} else {
 		p.pipe.StderrR = out.Master
-		p.pipe.StderrR = out.Slave
+		p.pipe.stderrW = out.Slave
 	}
 
 	return nil
