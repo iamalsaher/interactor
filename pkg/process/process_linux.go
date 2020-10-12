@@ -2,6 +2,7 @@ package process
 
 import (
 	"os"
+	"time"
 
 	"github.com/iamalsaher/interactor/pkg/pty"
 )
@@ -23,6 +24,17 @@ func (p *Process) Start() (e error) {
 		Sys:   nil,
 		Files: []*os.File{p.pipe.StdinR, p.pipe.StdoutW, p.pipe.StderrW},
 	})
+
+	if e == nil {
+		p.PID = p.proc.Pid
+
+		//Setup timeout function
+		if p.details.timeout > 0 {
+			time.AfterFunc(p.details.timeout, func() {
+				p.Kill()
+			})
+		}
+	}
 	return e
 }
 

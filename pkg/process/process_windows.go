@@ -2,6 +2,7 @@ package process
 
 import (
 	"os"
+	"time"
 
 	"github.com/iamalsaher/interactor/pkg/pty"
 )
@@ -17,14 +18,32 @@ type Process struct {
 
 //Start is used to finally Start the process
 func (p *Process) Start() (e error) {
-	if p.proc, e = newConPTYProcess(p.details.path, p.details.args, p.details.rundir, p.details.env, &p.pty.SIX); e == nil {
+	if p.pty != nil {
+		p.proc, e = newConPTYProcess(p.details.path, p.details.args, p.details.rundir, p.details.env, &p.pty.SIX)
+	} else {
+		p.proc, e = os.StartProcess(p.details.path, p.details.args, &os.ProcAttr{
+			Dir:   p.details.rundir,
+			Env:   p.details.env,
+			Sys:   nil,
+			Files: []*os.File{p.pipe.StdinR, p.pipe.StdoutW, p.pipe.StderrW},
+		})
+	}
+
+	if e == nil {
 		p.PID = p.proc.Pid
+
+		//Setup timeout function
+		if p.details.timeout > 0 {
+			time.AfterFunc(p.details.timeout, func() {
+				p.Kill()
+			})
+		}
 	}
 	return e
 }
 
 func (p *Process) GetIO() (*os.File, *os.File) {
-	return p.pty.Master, p.pty.Slave
+	return p.pty.Input, p.pty.Output
 }
 
 /*
