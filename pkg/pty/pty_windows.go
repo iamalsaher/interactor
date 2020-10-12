@@ -22,7 +22,7 @@ var (
 	deleteProcThreadAttributeList     = kernel32.NewProc("DeleteProcThreadAttributeList")
 )
 
-const minConPtySupportVersion float64 = 6.3
+const minConPtySupportBuild int = 18362
 
 //StartupInfoEx exposes the Extended StartupInfo which can be passed to CreateProcess
 type StartupInfoEx struct {
@@ -51,15 +51,15 @@ func conPTYSupport() bool {
 		panic(e)
 	}
 
-	v, _, e := k.GetStringValue("CurrentVersion")
+	v, _, e := k.GetStringValue("CurrentBuild")
 	k.Close()
 
-	s, err := strconv.ParseFloat(v, 64)
+	s, err := strconv.Atoi(v)
 	if err != nil {
 		panic(e)
 	}
 
-	if s < minConPtySupportVersion {
+	if s < minConPtySupportBuild {
 		return false
 	}
 	return true
@@ -88,7 +88,7 @@ func NewPTY() (*PTY, error) {
 		panic(err)
 	}
 
-	if err := windows.CreatePipe(&hPipeOut, &p.hOutput, nil, 0); err != nil {
+	if err := windows.CreatePipe(&p.hOutput, &hPipeOut, nil, 0); err != nil {
 		panic(err)
 	}
 
