@@ -10,7 +10,7 @@ import (
 //Process contains all the info about the Process
 type Process struct {
 	details *Details
-	pipe    *Pipes
+	Pipe    *Pipes
 	ptys    []*pty.PTY
 	proc    *os.Process
 	PID     int
@@ -22,7 +22,7 @@ func (p *Process) Start() (e error) {
 		Dir:   p.details.rundir,
 		Env:   p.details.env,
 		Sys:   nil,
-		Files: []*os.File{p.pipe.stdinR, p.pipe.stdoutW, p.pipe.stderrW},
+		Files: []*os.File{p.Pipe.stdinR, p.Pipe.stdoutW, p.Pipe.stderrW},
 	})
 
 	if e == nil {
@@ -45,12 +45,12 @@ If errPTY is set then function also attempts to assign a pty to stderr
 If forcePTY is set then function errors out if pty cannot be aquired
 */
 func (p *Process) ConnectIO(errPTY, forcePTY bool) error {
-	p.pipe = new(Pipes)
+	p.Pipe = new(Pipes)
 
 	in, err := pty.NewPTY()
 	if err != nil {
 		if forcePTY {
-			p.pipe = nil
+			p.Pipe = nil
 			return err
 		}
 		return setPipeIO(p)
@@ -59,32 +59,32 @@ func (p *Process) ConnectIO(errPTY, forcePTY bool) error {
 	out, err := pty.NewPTY()
 	if err != nil {
 		if forcePTY {
-			p.pipe = nil
+			p.Pipe = nil
 			return err
 		}
 		return setPipeIO(p)
 	}
 
-	p.pipe.stdinR = in.Slave
-	p.pipe.StdinW = in.Master
-	p.pipe.StdoutR = out.Master
-	p.pipe.stdoutW = out.Slave
+	p.Pipe.stdinR = in.Slave
+	p.Pipe.StdinW = in.Master
+	p.Pipe.StdoutR = out.Master
+	p.Pipe.stdoutW = out.Slave
 
 	if errPTY {
 		errout, err := pty.NewPTY()
 		if err != nil {
 			if forcePTY {
-				p.pipe = nil
+				p.Pipe = nil
 				return err
 			}
 			return setPipeIO(p)
 		}
-		p.pipe.StderrR = errout.Master
-		p.pipe.stderrW = errout.Slave
+		p.Pipe.StderrR = errout.Master
+		p.Pipe.stderrW = errout.Slave
 
 	} else {
-		p.pipe.StderrR = out.Master
-		p.pipe.stderrW = out.Slave
+		p.Pipe.StderrR = out.Master
+		p.Pipe.stderrW = out.Slave
 	}
 
 	return nil
