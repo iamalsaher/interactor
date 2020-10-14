@@ -8,7 +8,7 @@ import (
 //NewProcess is used to setup details about new process
 func NewProcess(path string, args ...string) *Process {
 
-	details := &Details{path: path, args: args, env: os.Environ()}
+	details := &Details{path: path, args: append([]string{path}, args...), env: os.Environ()}
 	return &Process{details: details}
 }
 

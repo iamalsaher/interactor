@@ -3,34 +3,44 @@ package main
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/iamalsaher/interactor/pkg/process"
-	"golang.org/x/sys/windows"
 )
 
 func main() {
 	fmt.Println("Started")
-	proc := process.NewProcess("binary.exe")
+	proc := process.NewProcess("./binary", "--sleep", "2")
 	// proc.SetDirectory("/tmp")
-	// proc.SetTimeout(2000)
-	if e := proc.ConnectIO(false); e != nil {
+	proc.SetTimeout(3000)
+	if e := proc.ConnectIO(false, false); e != nil {
 		panic(e)
 	}
-	master, slave := proc.GetIO()
-	buff := make([]byte, 400)
+	// input, output := proc.Pipe.StdinW, proc.Pipe.StdoutR
 
 	if e := proc.Start(); e != nil {
 		panic(e)
 	}
 	fmt.Println(proc.PID)
 
-	if n, e := slave.Read(buff); e != nil {
-		panic(e)
-	} else {
-		fmt.Printf("Read %v bytes\nData:%v\n", n, string(buff))
-	}
-	var n uint32
-	windows.WriteFile(windows.Handle(master.Fd()), []byte("lundloda"), &n, nil)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		if proc.IO() {
+			c := make([]byte, 1)
+			for {
+				if _, e := proc.Pipe.StdoutR.Read(c); e == nil {
+					fmt.Print(string(c[0]))
+				} else {
+					log.Println(e.Error())
+					break
+				}
+			}
+		}
+		wg.Done()
+	}()
+
+	wg.Wait()
 
 	ps, err := proc.Wait()
 	if err != nil {

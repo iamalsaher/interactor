@@ -13,6 +13,7 @@ type Process struct {
 	pty     *pty.PTY
 	Pipe    *Pipes
 	proc    *os.Process
+	io      bool
 	PID     int
 }
 
@@ -50,6 +51,7 @@ If forcePTY is set then function errors out if pty cannot be aquired
 func (p *Process) ConnectIO(forcePTY bool) error {
 
 	p.Pipe = new(Pipes)
+	p.io = true
 
 	if pty, err := pty.NewPTY(); err == nil {
 		p.pty = pty
