@@ -13,6 +13,7 @@ type Process struct {
 	Pipe    *Pipes
 	ptys    []*pty.PTY
 	proc    *os.Process
+	io      bool
 	PID     int
 }
 
@@ -86,7 +87,7 @@ func (p *Process) ConnectIO(errPTY, forcePTY bool) error {
 		p.Pipe.StderrR = out.Master
 		p.Pipe.stderrW = out.Slave
 	}
-
+	p.io = true
 	return nil
 }
 
