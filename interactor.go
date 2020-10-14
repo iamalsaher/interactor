@@ -2,45 +2,37 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
-	"sync"
 
 	"github.com/iamalsaher/interactor/pkg/process"
 )
 
+func interactor(input io.Writer, output io.Reader) {
+	c := make([]byte, 1)
+	for {
+		if _, e := output.Read(c); e == nil {
+			fmt.Print(string(c[0]))
+		} else {
+			log.Println(e.Error())
+			break
+		}
+	}
+}
+
 func main() {
-	fmt.Println("Started")
 	proc := process.NewProcess("./binary", "--sleep", "2")
 	// proc.SetDirectory("/tmp")
-	proc.SetTimeout(3000)
+	proc.SetTimeout(1000)
 	if e := proc.ConnectIO(false, false); e != nil {
 		panic(e)
 	}
-	// input, output := proc.Pipe.StdinW, proc.Pipe.StdoutR
 
-	if e := proc.Start(); e != nil {
+	if e := proc.Start(&process.Interactor{Function: interactor, Input: proc.Pipe.StdinW, Output: proc.Pipe.StdoutR}); e != nil {
 		panic(e)
 	}
-	fmt.Println(proc.PID)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		if proc.IO() {
-			c := make([]byte, 1)
-			for {
-				if _, e := proc.Pipe.StdoutR.Read(c); e == nil {
-					fmt.Print(string(c[0]))
-				} else {
-					log.Println(e.Error())
-					break
-				}
-			}
-		}
-		wg.Done()
-	}()
-
-	wg.Wait()
+	fmt.Printf("Started Process with PID %v\n", proc.PID)
 
 	ps, err := proc.Wait()
 	if err != nil {

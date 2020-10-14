@@ -47,9 +47,4 @@ func (p *Process) Wait() (*os.ProcessState, error) {
 	return p.proc.Wait()
 }
 
-//IO returns if IO is connected
-func (p *Process) IO() bool {
-	return p.io
-}
-
 func setPipeIO(p *Process) error { return nil }

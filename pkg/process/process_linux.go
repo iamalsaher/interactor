@@ -18,7 +18,12 @@ type Process struct {
 }
 
 //Start is used to finally Start the process
-func (p *Process) Start() (e error) {
+func (p *Process) Start(i *Interactor) (e error) {
+
+	if p.io && i != nil {
+		go i.Function(i.Input, i.Output)
+	}
+
 	p.proc, e = os.StartProcess(p.details.path, append([]string{p.details.path}, p.details.args...), &os.ProcAttr{
 		Dir:   p.details.rundir,
 		Env:   p.details.env,
@@ -70,23 +75,9 @@ func (p *Process) ConnectIO(errPTY, forcePTY bool) error {
 	p.Pipe.StdinW = in.Master
 	p.Pipe.StdoutR = out.Master
 	p.Pipe.stdoutW = out.Slave
+	p.Pipe.StderrR = out.Master
+	p.Pipe.stderrW = out.Slave
 
-	if errPTY {
-		errout, err := pty.NewPTY()
-		if err != nil {
-			if forcePTY {
-				p.Pipe = nil
-				return err
-			}
-			return setPipeIO(p)
-		}
-		p.Pipe.StderrR = errout.Master
-		p.Pipe.stderrW = errout.Slave
-
-	} else {
-		p.Pipe.StderrR = out.Master
-		p.Pipe.stderrW = out.Slave
-	}
 	p.io = true
 	return nil
 }

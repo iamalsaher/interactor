@@ -1,6 +1,7 @@
 package process
 
 import (
+	"io"
 	"os"
 	"time"
 )
@@ -24,4 +25,11 @@ type Pipes struct {
 
 	StderrR *os.File
 	stderrW *os.File
+}
+
+//Interactor is used to start a function to interact with the process
+type Interactor struct {
+	Function func(io.Writer, io.Reader)
+	Input    io.Writer
+	Output   io.Reader
 }
