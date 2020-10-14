@@ -38,7 +38,8 @@ func interactor(input io.Writer, output io.Reader) {
 }
 
 func main() {
-	proc := process.NewProcess("./binary", "-showTTY", "-sleep", "5")
+	proc := process.NewProcess("./binary", "--sleep", "5", "-env")
+	proc.SetEnviron([]string{"SEXYENV=LOL"}, true)
 	// proc.SetDirectory("/tmp")
 	// proc.SetTimeout(1000)
 	if e := proc.ConnectIO(false, false); e != nil {
