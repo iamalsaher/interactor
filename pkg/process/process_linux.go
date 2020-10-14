@@ -19,7 +19,7 @@ type Process struct {
 
 //Start is used to finally Start the process
 func (p *Process) Start() (e error) {
-	p.proc, e = os.StartProcess(p.details.path, p.details.args, &os.ProcAttr{
+	p.proc, e = os.StartProcess(p.details.path, append([]string{p.details.path}, p.details.args...), &os.ProcAttr{
 		Dir:   p.details.rundir,
 		Env:   p.details.env,
 		Sys:   nil,

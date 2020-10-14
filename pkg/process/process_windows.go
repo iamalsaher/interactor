@@ -22,7 +22,7 @@ func (p *Process) Start() (e error) {
 	if p.pty != nil {
 		p.proc, e = newConPTYProcess(p.details.path, p.details.args, p.details.rundir, p.details.env, &p.pty.SIX)
 	} else {
-		p.proc, e = os.StartProcess(p.details.path, p.details.args, &os.ProcAttr{
+		p.proc, e = os.StartProcess(p.details.path, append([]string{p.details.path}, p.details.args...), &os.ProcAttr{
 			Dir:   p.details.rundir,
 			Env:   p.details.env,
 			Sys:   nil,
