@@ -25,6 +25,8 @@ type Pipes struct {
 
 	StderrR *os.File
 	stderrW *os.File
+
+	closer []*os.File
 }
 
 //Interactor is used to start a function to interact with the process

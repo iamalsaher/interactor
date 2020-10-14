@@ -1,33 +1,51 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
+	"sync"
 
 	"github.com/iamalsaher/interactor/pkg/process"
 )
 
+var wg sync.WaitGroup
+
 func interactor(input io.Writer, output io.Reader) {
-	c := make([]byte, 1)
-	for {
-		if _, e := output.Read(c); e == nil {
-			fmt.Print(string(c[0]))
-		} else {
-			log.Println(e.Error())
-			break
+	var b bytes.Buffer
+
+	b.Grow(8192)
+	done := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			default:
+				if b.Len() > 0 {
+					fmt.Print(string(b.Next(b.Len())))
+				}
+			}
 		}
-	}
+	}()
+
+	io.Copy(&b, output)
+	wg.Done()
+	<-done
+
 }
 
 func main() {
-	proc := process.NewProcess("./binary", "--sleep", "2")
+	proc := process.NewProcess("./binary", "-showTTY", "-sleep", "5")
 	// proc.SetDirectory("/tmp")
-	proc.SetTimeout(1000)
+	// proc.SetTimeout(1000)
 	if e := proc.ConnectIO(false, false); e != nil {
 		panic(e)
 	}
 
+	wg.Add(1)
 	if e := proc.Start(&process.Interactor{Function: interactor, Input: proc.Pipe.StdinW, Output: proc.Pipe.StdoutR}); e != nil {
 		panic(e)
 	}
@@ -38,5 +56,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error waiting for process: %v", err)
 	}
+	wg.Wait()
 	fmt.Printf("exit code was: %d\n", ps.ExitCode())
 }

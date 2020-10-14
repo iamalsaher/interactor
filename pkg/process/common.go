@@ -44,7 +44,11 @@ func (p *Process) Signal(sig os.Signal) error {
 
 //Wait is a wrapper around os.Process.Wait()
 func (p *Process) Wait() (*os.ProcessState, error) {
-	return p.proc.Wait()
+	s, e := p.proc.Wait()
+	for _, pipe := range p.Pipe.closer {
+		pipe.Close()
+	}
+	return s, e
 }
 
 func setPipeIO(p *Process) error { return nil }

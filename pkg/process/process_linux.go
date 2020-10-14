@@ -78,6 +78,8 @@ func (p *Process) ConnectIO(errPTY, forcePTY bool) error {
 	p.Pipe.StderrR = out.Master
 	p.Pipe.stderrW = out.Slave
 
+	p.Pipe.closer = append(p.Pipe.closer, in.Slave, in.Master, out.Master, out.Slave)
+
 	p.io = true
 	return nil
 }
