@@ -10,15 +10,20 @@ import (
 //Process contains all the info about the Process
 type Process struct {
 	details *Details
-	pty     *pty.PTY
 	Pipe    *Pipes
+	pty     *pty.PTY
 	proc    *os.Process
 	io      bool
 	PID     int
 }
 
 //Start is used to finally Start the process
-func (p *Process) Start() (e error) {
+func (p *Process) Start(i *Interactor) (e error) {
+
+	if p.io && i != nil {
+		go i.Function(i.Input, i.Output)
+	}
+
 	if p.pty != nil {
 		p.proc, e = newConPTYProcess(p.details.path, p.details.args, p.details.rundir, p.details.env, &p.pty.SIX)
 	} else {
@@ -51,13 +56,14 @@ If forcePTY is set then function errors out if pty cannot be aquired
 func (p *Process) ConnectIO(forcePTY bool) error {
 
 	p.Pipe = new(Pipes)
-	p.io = true
 
 	if pty, err := pty.NewPTY(); err == nil {
 		p.pty = pty
 		p.Pipe.StdinW = pty.Input
 		p.Pipe.StdoutR = pty.Output
 		p.Pipe.StderrR = pty.Output
+		p.io = true
+		p.Pipe.closer = append(p.Pipe.closer, pty.Input, pty.Output)
 		return nil
 	} else if forcePTY {
 		return err
