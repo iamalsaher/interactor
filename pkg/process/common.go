@@ -42,13 +42,23 @@ func (p *Process) Signal(sig os.Signal) error {
 	return p.proc.Signal(sig)
 }
 
-//Wait is a wrapper around os.Process.Wait()
-func (p *Process) Wait() (*os.ProcessState, error) {
-	s, e := p.proc.Wait()
-	for _, pipe := range p.Pipe.closer {
-		pipe.Close()
+func (p *Process) pipeAndPtyCloser() {
+	for _, pty := range p.ptys {
+		pty.Close()
 	}
-	return s, e
+}
+
+//Wait is a wrapper around os.Process.Wait()
+func (p *Process) Wait() (s *os.ProcessState, e error) {
+	s, e = p.proc.Wait()
+	p.pipeAndPtyCloser()
+	return
+}
+
+//Kill is a wrapper around os.Process.Kill()
+func (p *Process) Kill() error {
+	p.pipeAndPtyCloser()
+	return p.proc.Kill()
 }
 
 func setPipeIO(p *Process) error { return nil }

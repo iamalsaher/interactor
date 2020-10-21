@@ -4,7 +4,19 @@ import (
 	"io"
 	"os"
 	"time"
+
+	"github.com/iamalsaher/interactor/pkg/pty"
 )
+
+//Process contains all the info about the Process
+type Process struct {
+	details *Details
+	Pipe    *Pipes
+	proc    *os.Process
+	io      bool
+	PID     int
+	ptys    []*pty.PTY
+}
 
 //Details is used to store various details about the process
 type Details struct {
@@ -25,8 +37,6 @@ type Pipes struct {
 
 	StderrR *os.File
 	stderrW *os.File
-
-	closer []*os.File
 }
 
 //Interactor is used to start a function to interact with the process

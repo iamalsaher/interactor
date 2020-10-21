@@ -80,7 +80,8 @@ func NewPTY() (*PTY, error) {
 	)
 	const procThreadAttributePseudoconsole uintptr = 0x00020016
 
-	p := PTY{phPC: new(windows.Handle)}
+	p := new(PTY)
+	p.phPC = new(windows.Handle)
 	p.size.X = 80
 	p.size.Y = 32
 
@@ -134,7 +135,7 @@ func NewPTY() (*PTY, error) {
 	if r == 0 {
 		return nil, fmt.Errorf("updateProcThreadAttribute Error:%v Code: 0x%x", e, r)
 	}
-	return &p, nil
+	return p, nil
 }
 
 //Resize is used to resize the buffer allocated to PTY

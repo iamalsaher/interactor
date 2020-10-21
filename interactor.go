@@ -38,11 +38,11 @@ func interactor(input io.Writer, output io.Reader) {
 }
 
 func main() {
-	proc := process.NewProcess("./binary", "--sleep", "5", "-env")
-	proc.SetEnviron([]string{"SEXYENV=LOL"}, true)
+	proc := process.NewProcess("./binary.exe", "--sleep", "5")
+	// proc.SetEnviron([]string{"SEXYENV=LOL"}, true)
 	// proc.SetDirectory("/tmp")
 	// proc.SetTimeout(1000)
-	if e := proc.ConnectIO(false, false); e != nil {
+	if e := proc.ConnectIO(false); e != nil {
 		panic(e)
 	}
 
@@ -58,5 +58,6 @@ func main() {
 		log.Fatalf("Error waiting for process: %v", err)
 	}
 	wg.Wait()
+	// time.Sleep(5 * time.Second)
 	fmt.Printf("exit code was: %d\n", ps.ExitCode())
 }

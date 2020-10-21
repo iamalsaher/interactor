@@ -175,31 +175,12 @@ func newConPTYProcess(argv0 string, argv []string, dir string, env []string, six
 		return nil, e
 	}
 	return os.FindProcess(p)
-	// proc := &os.Process{Pid: p}
-
-	// //Update the handle
-	// ptr := reflect.ValueOf(proc)
-	// val := reflect.Indirect(ptr)
-
-	// member := val.FieldByName("handle")
-	// ptrToHandle := unsafe.Pointer(member.UnsafeAddr())
-	// realPtrToHandle := (*uintptr)(ptrToHandle)
-	// *realPtrToHandle = h
-
-	// runtime.SetFinalizer(proc, (*os.Process).Release)
-	// return proc, nil
-
 }
 
 func createProcessWithConpty(argv0 string, argv []string, dir string, env []string, six *pty.StartupInfoEx) (pid int, handle uintptr, err error) {
 
 	if len(argv0) == 0 {
 		return 0, 0, syscall.EWINDOWS
-	}
-
-	argv0p, err := windows.UTF16PtrFromString(argv0)
-	if err != nil {
-		return 0, 0, err
 	}
 
 	var (
@@ -221,6 +202,11 @@ func createProcessWithConpty(argv0 string, argv []string, dir string, env []stri
 		}
 	}
 
+	argv0p, err := windows.UTF16PtrFromString(argv0)
+	if err != nil {
+		return 0, 0, err
+	}
+
 	if len(cmdline) != 0 {
 		argvp, err = windows.UTF16PtrFromString(cmdline)
 		if err != nil {
@@ -233,6 +219,8 @@ func createProcessWithConpty(argv0 string, argv []string, dir string, env []stri
 	flags := uint32(windows.CREATE_UNICODE_ENVIRONMENT) | extendedStartupinfoPresent
 	pSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec)), InheritHandle: 1}
 	tSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec)), InheritHandle: 1}
+
+	// fmt.Printf("argv0: %+v\nargv: %+v\npsec: %+v\ntsec: %+v\ninherithandles: %v\nflags: %+v\nenv: %+v\ndir: %v\nSI: %+v\nPI: %+v", argv0, argv, pSec, tSec, false, flags, createEnvBlock(addCriticalEnv(dedupEnvCase(true, env))), dirp, &six.StartupInfo, pi)
 
 	err = windows.CreateProcess(
 		argv0p,
