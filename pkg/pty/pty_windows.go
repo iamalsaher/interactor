@@ -36,12 +36,16 @@ type PTY struct {
 	Output *os.File
 	SIX    StartupInfoEx
 
-	size    windows.Coord
+	size    uintptr
 	phPC    *windows.Handle
 	hInput  windows.Handle
 	hOutput windows.Handle
 
 	attrListBuffer []byte
+}
+
+func getSize(c, r int16) uintptr {
+	return uintptr(c) + (uintptr(r) << 16)
 }
 
 func conPTYSupport() bool {
@@ -80,10 +84,10 @@ func NewPTY() (*PTY, error) {
 	)
 	const procThreadAttributePseudoconsole uintptr = 0x00020016
 
-	p := new(PTY)
-	p.phPC = new(windows.Handle)
-	p.size.X = 80
-	p.size.Y = 32
+	p := &PTY{
+		phPC: new(windows.Handle),
+		size: getSize(80, 32),
+	}
 
 	if err := windows.CreatePipe(&hPipeIn, &p.hInput, nil, 0); err != nil {
 		panic(err)
@@ -93,7 +97,7 @@ func NewPTY() (*PTY, error) {
 		panic(err)
 	}
 
-	r, _, e := createPseudoConsole.Call(uintptr(unsafe.Pointer(&p.size)), uintptr(hPipeIn), uintptr(hPipeOut), 0, uintptr(unsafe.Pointer(p.phPC)))
+	r, _, e := createPseudoConsole.Call(p.size, uintptr(hPipeIn), uintptr(hPipeOut), 0, uintptr(unsafe.Pointer(p.phPC)))
 	if r != 0 {
 		return nil, fmt.Errorf("createPseudoConsole Error:%v Code: 0x%x", e, r)
 	}
@@ -139,9 +143,8 @@ func NewPTY() (*PTY, error) {
 }
 
 //Resize is used to resize the buffer allocated to PTY
-func (p *PTY) Resize(x, y int16) error {
-	nsize := &windows.Coord{X: x, Y: y}
-	r, _, e := procResizePseudoConsole.Call(uintptr(*p.phPC), uintptr(unsafe.Pointer(nsize)))
+func (p *PTY) Resize(row, column int16) error {
+	r, _, e := procResizePseudoConsole.Call(uintptr(*p.phPC), getSize(row, column))
 	if r == 0 {
 		return fmt.Errorf("procResizePseudoConsole Error:%v Code: 0x%x", e, r)
 	}

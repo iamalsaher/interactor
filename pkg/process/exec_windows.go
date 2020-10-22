@@ -169,12 +169,14 @@ https://stackoverflow.com/questions/17981651/is-there-any-way-to-access-private-
 */
 
 //NewConPTYProcess is used to start a conpty process
-func newConPTYProcess(argv0 string, argv []string, dir string, env []string, six *pty.StartupInfoEx) (*os.Process, error) {
-	p, _, e := createProcessWithConpty(argv0, argv, dir, env, six)
+func newConPTYProcess(argv0 string, argv []string, dir string, env []string, six *pty.StartupInfoEx) (o *os.Process, e error) {
+	p, h, e := createProcessWithConpty(argv0, argv, dir, env, six)
 	if e != nil {
 		return nil, e
 	}
-	return os.FindProcess(p)
+	o, e = os.FindProcess(p)
+	syscall.CloseHandle(syscall.Handle(h))
+	return
 }
 
 func createProcessWithConpty(argv0 string, argv []string, dir string, env []string, six *pty.StartupInfoEx) (pid int, handle uintptr, err error) {
