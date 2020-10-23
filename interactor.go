@@ -32,13 +32,13 @@ func interactor(input io.Writer, output io.Reader) {
 	}()
 
 	io.Copy(&b, output)
-	wg.Done()
-	<-done
 
+	wg.Done()
+	close(done)
 }
 
 func main() {
-	proc := process.NewProcess("./binary.exe", "--sleep", "5")
+	proc := process.NewProcess(`.\binary.exe`, "--tty")
 	// proc.SetEnviron([]string{"SEXYENV=LOL"}, true)
 	// proc.SetDirectory("/tmp")
 	// proc.SetTimeout(1000)
@@ -52,7 +52,6 @@ func main() {
 	}
 
 	fmt.Printf("Started Process with PID %v\n", proc.PID)
-
 	ps, err := proc.Wait()
 	if err != nil {
 		log.Fatalf("Error waiting for process: %v", err)

@@ -186,10 +186,10 @@ func createProcessWithConpty(argv0 string, argv []string, dir string, env []stri
 	}
 
 	var (
-		cmdline = makeCmdLine(argv)
+		cmdline = makeCmdLine(append([]string{argv0}, argv...))
 		argvp   *uint16
 		dirp    *uint16
-		zeroSec windows.SecurityAttributes
+		zeroSec = &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(windows.SecurityAttributes{})), InheritHandle: 1}
 	)
 
 	if len(dir) != 0 {
@@ -219,16 +219,14 @@ func createProcessWithConpty(argv0 string, argv []string, dir string, env []stri
 	six.StartupInfo.Flags = windows.STARTF_USESTDHANDLES
 	pi := new(windows.ProcessInformation)
 	flags := uint32(windows.CREATE_UNICODE_ENVIRONMENT) | extendedStartupinfoPresent
-	pSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec)), InheritHandle: 1}
-	tSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec)), InheritHandle: 1}
 
 	// fmt.Printf("argv0: %+v\nargv: %+v\npsec: %+v\ntsec: %+v\ninherithandles: %v\nflags: %+v\nenv: %+v\ndir: %v\nSI: %+v\nPI: %+v", argv0, argv, pSec, tSec, false, flags, createEnvBlock(addCriticalEnv(dedupEnvCase(true, env))), dirp, &six.StartupInfo, pi)
 
 	err = windows.CreateProcess(
 		argv0p,
 		argvp,
-		pSec, // process handle not inheritable
-		tSec, // thread handles not inheritable,
+		zeroSec, // process handle not inheritable
+		zeroSec, // thread handles not inheritable,
 		false,
 		flags,
 		createEnvBlock(addCriticalEnv(dedupEnvCase(true, env))),

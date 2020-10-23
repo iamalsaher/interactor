@@ -16,6 +16,8 @@ func isTTY(file os.File) bool {
 
 func main() {
 
+	fmt.Printf("Args: %v\n", os.Args)
+
 	showTTY := flag.Bool("tty", false, "Show TTY Status")
 	showEnv := flag.Bool("env", false, "Show Environs")
 	sleep := flag.Uint("sleep", 0, "Sleep for duration")
