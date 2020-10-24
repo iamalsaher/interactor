@@ -48,10 +48,10 @@ func main() {
 	fmt.Println("before seeing this string")
 
 	if *takeInput {
-		fmt.Printf("Give me an input and I will repeat it back")
+		fmt.Print("Give me an input and I will repeat it back> ")
 		reader := bufio.NewReader(os.Stdin)
 		text, _ := reader.ReadString('\n')
-		fmt.Println(text)
+		fmt.Printf("Your input is %v", text)
 	}
 
 	// var input string
