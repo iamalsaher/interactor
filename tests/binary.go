@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -21,6 +22,8 @@ func main() {
 	showTTY := flag.Bool("tty", false, "Show TTY Status")
 	showEnv := flag.Bool("env", false, "Show Environs")
 	sleep := flag.Uint("sleep", 0, "Sleep for duration")
+	takeInput := flag.Bool("input", false, "Prompt for input")
+
 	flag.Parse()
 
 	if *showTTY {
@@ -43,6 +46,13 @@ func main() {
 	}
 
 	fmt.Println("before seeing this string")
+
+	if *takeInput {
+		fmt.Printf("Give me an input and I will repeat it back")
+		reader := bufio.NewReader(os.Stdin)
+		text, _ := reader.ReadString('\n')
+		fmt.Println(text)
+	}
 
 	// var input string
 	// fmt.Print("Enter input: ")
