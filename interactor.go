@@ -38,16 +38,18 @@ func interactor(input io.Writer, output io.Reader) {
 }
 
 func main() {
-	proc := process.NewProcess(`.\binary.exe`, "--tty")
-	// proc.SetEnviron([]string{"SEXYENV=LOL"}, true)
+	proc := process.NewProcess(`.\binary.exe`, "--tty", "-sleep", "5")
+	proc.SetEnviron([]string{"SEXYENV=LOL"}, true)
 	// proc.SetDirectory("/tmp")
 	// proc.SetTimeout(1000)
-	if e := proc.ConnectIO(false); e != nil {
+	if e := proc.ConnectIO(true); e != nil {
 		panic(e)
 	}
 
 	wg.Add(1)
-	if e := proc.Start(&process.Interactor{Function: interactor, Input: proc.Pipe.StdinW, Output: proc.Pipe.StdoutR}); e != nil {
+	go interactor(proc.Pipe.StdinW, proc.Pipe.StdoutR)
+
+	if e := proc.Start(); e != nil {
 		panic(e)
 	}
 
