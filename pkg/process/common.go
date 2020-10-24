@@ -1,6 +1,7 @@
 package process
 
 import (
+	"fmt"
 	"os"
 	"time"
 )
@@ -61,4 +62,20 @@ func (p *Process) Kill() error {
 	return p.proc.Kill()
 }
 
-func setPipeIO(p *Process) error { return nil }
+/*
+ConnectIO is used to connect the input output handles
+It attempts PTY as a primary mechanism else falls back to Pipes
+If forcePTY is set then function errors out if pty cannot be aquired
+*/
+func (p *Process) ConnectIO(forcePTY bool) error {
+
+	if e := setPtyIO(p); e == nil || forcePTY {
+		return e
+	}
+
+	return setPipeIO(p)
+}
+
+func setPipeIO(p *Process) error {
+	return fmt.Errorf("Ayy lmaooo no setPipeIO implemented")
+}

@@ -8,11 +8,7 @@ import (
 )
 
 //Start is used to finally Start the process
-func (p *Process) Start(i *Interactor) (e error) {
-
-	if p.Pipe != nil && i != nil {
-		go i.Function(i.Input, i.Output)
-	}
+func (p *Process) Start() (e error) {
 
 	p.proc, e = os.StartProcess(p.details.path, append([]string{p.details.path}, p.details.args...), &os.ProcAttr{
 		Dir:   p.details.rundir,
@@ -34,40 +30,56 @@ func (p *Process) Start(i *Interactor) (e error) {
 	return e
 }
 
-/*
-ConnectIO is used to connect the input output handles
-It attempts PTY as a primary mechanism else falls back to Pipes
-If errPTY is set then function also attempts to assign a pty to stderr
-If forcePTY is set then function errors out if pty cannot be aquired
-*/
-func (p *Process) ConnectIO(forcePTY bool) error {
-	p.Pipe = new(Pipes)
+func setPtyIO(p *Process) error {
 
-	in, err := pty.NewPTY()
-	if err != nil {
-		if forcePTY {
-			p.Pipe = nil
-			return err
-		}
-		return setPipeIO(p)
+	pty, e := pty.NewPTY()
+	if e == nil {
+		p.Pipe = new(Pipes)
+		p.Pipe.StdinW = pty.Master
+		p.Pipe.StdoutR = pty.Master
+		p.Pipe.StderrR = pty.Master
+		p.ptys = append(p.ptys, pty)
+
+		p.Pipe.stdinR = pty.Slave
+		p.Pipe.stdoutW = pty.Slave
+		p.Pipe.stderrW = pty.Slave
 	}
-
-	out, err := pty.NewPTY()
-	if err != nil {
-		if forcePTY {
-			p.Pipe = nil
-			return err
-		}
-		return setPipeIO(p)
-	}
-
-	p.Pipe.stdinR = in.Slave
-	p.Pipe.StdinW = in.Master
-	p.Pipe.StdoutR = out.Master
-	p.Pipe.stdoutW = out.Slave
-	p.Pipe.StderrR = out.Master
-	p.Pipe.stderrW = out.Slave
-	p.ptys = append(p.ptys, in, out)
-
-	return nil
+	return e
 }
+
+// func setPtyIO(p *Process) error {
+// 	p.Pipe = new(Pipes)
+
+// 	in, inErr := pty.NewPTY()
+// 	out, outErr := pty.NewPTY()
+
+// 	if inErr != nil || outErr != nil {
+// 		var errs []string
+// 		if inErr != nil {
+// 			errs = append(errs, "Input PTY: "+se.Error())
+// 		}
+// 		if me != nil {
+// 			errs = append(errs, "Master: "+me.Error())
+// 		}
+// 		return errors.New(strings.Join(errs, " "))
+// 	}
+
+// 	out, err := pty.NewPTY()
+// 	if err != nil {
+// 		if forcePTY {
+// 			p.Pipe = nil
+// 			return err
+// 		}
+// 		return setPipeIO(p)
+// 	}
+
+// 	p.Pipe.stdinR = in.Slave
+// 	p.Pipe.StdinW = in.Master
+// 	p.Pipe.StdoutR = out.Master
+// 	p.Pipe.stdoutW = out.Slave
+// 	p.Pipe.StderrR = out.Master
+// 	p.Pipe.stderrW = out.Slave
+// 	p.ptys = append(p.ptys, in, out)
+
+// 	return nil
+// }
