@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"sync"
 
 	"github.com/iamalsaher/interactor/pkg/process"
@@ -38,27 +37,22 @@ func interactor(input io.Writer, output io.Reader) {
 }
 
 func main() {
-	proc := process.NewProcess(`.\binary.exe`, "--tty", "-sleep", "5")
-	proc.SetEnviron([]string{"SEXYENV=LOL"}, true)
+	proc := process.NewProcess(`./binary`, "--tty", "--sleep", "5")
+	// proc.SetEnviron([]string{"SEXYENV=LOL"}, true)
 	// proc.SetDirectory("/tmp")
 	// proc.SetTimeout(1000)
-	if e := proc.ConnectIO(true); e != nil {
+	if e := proc.ConnectIO(true, false); e != nil {
 		panic(e)
 	}
 
 	wg.Add(1)
-	go interactor(proc.Pipe.StdinW, proc.Pipe.StdoutR)
+	go interactor(proc.Stdin, proc.Stdout)
 
 	if e := proc.Start(); e != nil {
 		panic(e)
 	}
 
 	fmt.Printf("Started Process with PID %v\n", proc.PID)
-	ps, err := proc.Wait()
-	if err != nil {
-		log.Fatalf("Error waiting for process: %v", err)
-	}
 	wg.Wait()
-	// time.Sleep(5 * time.Second)
-	fmt.Printf("exit code was: %d\n", ps.ExitCode())
+	fmt.Printf("exit code was: %d\n", proc.State.ExitCode())
 }
