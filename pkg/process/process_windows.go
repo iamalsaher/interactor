@@ -22,7 +22,7 @@ func (p *Process) osStart() (e error) {
 	return e
 }
 
-func setPtyIO(p *Process, setStderr bool) error {
+func setPtyIO(p *Process) error {
 	pty, e := pty.NewPTY()
 	if e == nil {
 		p.Stdin = pty.Input

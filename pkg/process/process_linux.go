@@ -1,7 +1,6 @@
 package process
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/iamalsaher/interactor/pkg/pty"
@@ -19,35 +18,28 @@ func (p *Process) osStart() (e error) {
 	return e
 }
 
-func setPtyIO(p *Process, setStderr bool) error {
+func setPtyIO(p *Process) error {
 
-	ttyIOE, e := pty.NewPTY()
-	if e == nil {
-
-		p.stdin = ttyIOE.Slave
-		p.stdout = ttyIOE.Slave
-		p.stderr = ttyIOE.Slave
-
-		p.Stdin = ttyIOE.Master
-		p.Stdout = ttyIOE.Master
-		p.Stderr = ttyIOE.Master
-
-		p.closers = append(p.closers, ttyIOE)
-
-		if !setStderr {
-			return nil
-		}
+	ttyIE, eIE := pty.NewPTY()
+	if eIE != nil {
+		return eIE
 	}
 
-	ttyE, e := pty.NewPTY()
-	if e != nil {
-		p.closeAll()
-		return fmt.Errorf("Cannot acquire stderr pty: Error: %v", e)
+	ttyO, eO := pty.NewPTY()
+	if eO != nil {
+		ttyO.Close()
+		return eO
 	}
 
-	p.stderr = ttyE.Slave
-	p.Stderr = ttyE.Master
-	p.closers = append(p.closers, ttyE)
+	p.stdin = ttyIE.Slave
+	p.stdout = ttyO.Slave
+	p.stderr = ttyIE.Slave
+
+	p.Stdin = ttyIE.Master
+	p.Stdout = ttyO.Master
+	p.Stderr = ttyIE.Master
+
+	p.closers = append(p.closers, ttyIE, ttyO)
 
 	return nil
 }

@@ -109,6 +109,7 @@ func (p *Process) closeAll() {
 	for _, i := range p.closers {
 		i.Close()
 	}
+	p.closers = nil
 }
 
 //Wait is a wrapper around os.Process.Wait()
@@ -127,51 +128,35 @@ func (p *Process) Kill() error {
 ConnectIO is used to connect the input output handles
 It attempts PTY as a primary mechanism else falls back to Pipes
 If forcePTY is set then function errors out if pty cannot be aquired
-
-If setStderr is set to true it tries to get a different pipe/pty for stderr
 */
-func (p *Process) ConnectIO(forcePTY, setStderr bool) error {
+func (p *Process) ConnectIO(forcePTY bool) error {
 
-	if e := setPtyIO(p, setStderr); e == nil || forcePTY {
+	if e := setPtyIO(p); e == nil || forcePTY {
 		return e
 	}
 
-	return setPipeIO(p, setStderr)
+	return setPipeIO(p)
 }
 
-func setPipeIO(p *Process, setStderr bool) error {
-
-	var (
-		rerr *os.File
-		werr *os.File
-		eerr error
-	)
+func setPipeIO(p *Process) error {
 
 	rin, win, ein := os.Pipe()
 	rout, wout, eout := os.Pipe()
-	if setStderr {
-		rerr, werr, eerr = os.Pipe()
-	}
+	rerr, werr, eerr := os.Pipe()
 
 	if ein != nil || eout != nil || eerr != nil {
 		return fmt.Errorf("Cannot aquire pipes for IO, inputErr: %v, outputErr: %v", ein, eout)
 	}
 
-	p.closers = append(p.closers, rin, win, rout, wout)
+	p.closers = append(p.closers, rin, win, rout, wout, rerr, werr)
 
 	p.stdin = rin
 	p.stdout = wout
-	p.stderr = wout
+	p.stderr = werr
 
 	p.Stdin = win
 	p.Stdout = rout
-	p.Stderr = rout
-
-	if setStderr {
-		p.closers = append(p.closers, rerr, werr)
-		p.stderr = werr
-		p.Stderr = rerr
-	}
+	p.Stderr = rerr
 
 	return nil
 }
