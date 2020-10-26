@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/iamalsaher/interactor/pkg/process"
 )
@@ -30,7 +31,7 @@ func main() {
 	proc := process.NewProcess(`.\binary.exe`, "--tty", "--sleep", "5")
 	// proc.SetEnviron([]string{"SEXYENV=LOL"}, true)
 	// proc.SetDirectory("/tmp")
-	proc.SetTimeout(1000)
+	proc.SetTimeout(1 * time.Second)
 	if e := proc.ConnectIO(true, false); e != nil {
 		panic(e)
 	}

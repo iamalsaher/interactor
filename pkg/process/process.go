@@ -41,7 +41,11 @@ type Details struct {
 //NewProcess is used to setup details about new process
 func NewProcess(path string, args ...string) *Process {
 
-	details := &Details{Path: path, Args: args, Env: os.Environ()}
+	details := &Details{
+		Path: path,
+		Args: args,
+		Env:  os.Environ(),
+	}
 	return &Process{Details: details}
 }
 
@@ -56,8 +60,8 @@ func (p *Process) SetEnviron(env []string, keepDefaultEnvironment bool) {
 }
 
 //SetTimeout is used to add process timeout in milliseconds
-func (p *Process) SetTimeout(timeout int64) {
-	p.Details.Timeout = time.Duration(timeout) * time.Millisecond
+func (p *Process) SetTimeout(t time.Duration) {
+	p.Details.Timeout = t
 }
 
 //SetDirectory is used to set directory in which the process should run
@@ -123,6 +127,8 @@ func (p *Process) Kill() error {
 ConnectIO is used to connect the input output handles
 It attempts PTY as a primary mechanism else falls back to Pipes
 If forcePTY is set then function errors out if pty cannot be aquired
+
+If setStderr is set to true it tries to get a different pipe/pty for stderr
 */
 func (p *Process) ConnectIO(forcePTY, setStderr bool) error {
 

@@ -9,7 +9,7 @@ import (
 func (p *Process) osStart() (e error) {
 
 	if p.pty != nil {
-		p.proc, e = newConPTYProcess(p.Details.Path, p.Details.Args, p.Details.Dir, p.Details.Env, &p.pty.SIX)
+		p.proc, e = newConPTYProcess(p.Details.Path, append([]string{p.Details.Path}, p.Details.Args...), p.Details.Dir, p.Details.Env, &p.pty.SIX)
 	} else {
 		p.proc, e = os.StartProcess(p.Details.Path, append([]string{p.Details.Path}, p.Details.Args...), &os.ProcAttr{
 			Dir:   p.Details.Dir,

@@ -186,7 +186,7 @@ func createProcessWithConpty(argv0 string, argv []string, dir string, env []stri
 	}
 
 	var (
-		cmdline = makeCmdLine(append([]string{argv0}, argv...))
+		cmdline = makeCmdLine(argv)
 		argvp   *uint16
 		dirp    *uint16
 		zeroSec = &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(windows.SecurityAttributes{})), InheritHandle: 1}
