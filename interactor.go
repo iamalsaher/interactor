@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/iamalsaher/interactor/pkg/process"
 )
@@ -14,10 +13,12 @@ func interactor(input io.Writer, output io.Reader, closer chan bool) {
 
 	b.Grow(8192)
 	go io.Copy(&b, output)
+	go input.Write([]byte("Swapnil\r\n"))
 
 	for {
 		select {
 		case <-closer:
+			// fmt.Print(string(b.Bytes()))
 			return
 		default:
 			if b.Len() > 0 {
@@ -28,11 +29,11 @@ func interactor(input io.Writer, output io.Reader, closer chan bool) {
 }
 
 func main() {
-	proc := process.NewProcess(`.\binary.exe`, "--tty", "--sleep", "5")
+	proc := process.NewProcess(`.\binary.exe`, "--tty", "--sleep", "2", "--input")
 	// proc.SetEnviron([]string{"SEXYENV=LOL"}, true)
 	// proc.SetDirectory("/tmp")
-	proc.SetTimeout(1 * time.Second)
-	if e := proc.ConnectIO(true, false); e != nil {
+	// proc.SetTimeout(1 * time.Second)
+	if e := proc.ConnectIO(true); e != nil {
 		panic(e)
 	}
 

@@ -1,6 +1,7 @@
 package process
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"syscall"
@@ -11,8 +12,30 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+//Windows Console constants
 const (
-	extendedStartupinfoPresent uint32 = 0x00080000
+	enableProcessedInput       = 0x0001
+	enableLineInput            = 0x0002
+	enableEchoInput            = 0x0004
+	enableWindowInput          = 0x0008
+	enableMouseInput           = 0x0010
+	enableInsertMode           = 0x0020
+	enableQuickEditMode        = 0x0040
+	enableExtendedFlags        = 0x0080
+	enableAutoPosition         = 0x0100
+	enableVirtualTerminalInput = 0x0200
+
+	enableProcessedOutput           = 0x0001
+	enableWrapAtEolOutput           = 0x0002
+	enableVirtualTerminalProcessing = 0x0004
+	disableNewlineAutoReturn        = 0x0008
+	enableLvbGridWorldwide          = 0x0010
+)
+
+const extendedStartupinfoPresent uint32 = 0x00080000
+
+var (
+	kernel32DLL = syscall.NewLazyDLL("kernel32.dll")
 )
 
 // makeCmdLine builds a command line out of args by escaping "special"
@@ -240,4 +263,17 @@ func createProcessWithConpty(argv0 string, argv []string, dir string, env []stri
 
 	defer windows.CloseHandle(windows.Handle(pi.Thread))
 	return int(pi.ProcessId), uintptr(pi.Process), nil
+}
+
+func setConsoleMode(handle uintptr, mode uint32) error {
+	r, _, e := kernel32DLL.NewProc("SetConsoleMode").Call(uintptr(syscall.Stdin), uintptr(mode), 0)
+	if r == 0 {
+		return fmt.Errorf("setConsoleMode Input handle Error:%v Code: 0x%x", e, r)
+	}
+	return nil
+}
+
+func getConsoleMode(handle syscall.Handle) (mode uint32, e error) {
+	e = syscall.GetConsoleMode(handle, &mode)
+	return
 }

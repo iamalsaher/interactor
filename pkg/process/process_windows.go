@@ -23,12 +23,39 @@ func (p *Process) osStart() (e error) {
 }
 
 func setPtyIO(p *Process) error {
-	pty, e := pty.NewPTY()
-	if e == nil {
+
+	// stdinHandle := syscall.Stdin
+	// stdoutHandle := syscall.Stdout
+	// stderrHandle := syscall.Stderr
+
+	// stdinSafeMode, e := getConsoleMode(stdinHandle)
+
+	// if e != nil {
+	// 	return e
+	// }
+
+	// if e := setConsoleMode(uintptr(stdoutHandle), uint32(enableProcessedOutput)); e != nil {
+	// 	return e
+	// }
+
+	// stdinSafeMode, e := getConsoleMode(stdoutHandle)
+	// fmt.Println(stdinSafeMode)
+
+	// r, _, e := setConsoleModeProc.Call(uintptr(syscall.Stdin), 0, 0)
+	// if r == 0 {
+	// 	return fmt.Errorf("setConsoleMode Input handle Error:%v Code: 0x%x", e, r)
+	// }
+
+	// r, _, e = setConsoleModeProc.Call(uintptr(syscall.Stdout), 0, 0)
+	// if r == 0 {
+	// 	return fmt.Errorf("setConsoleMode Output handle Error:%v Code: 0x%x", e, r)
+	// }
+
+	if pty, e := pty.NewPTY(); e == nil {
 		p.Stdin = pty.Input
 		p.Stdout = pty.Output
 		p.pty = pty
 		p.closers = append(p.closers, pty)
 	}
-	return e
+	return nil
 }
