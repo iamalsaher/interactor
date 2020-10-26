@@ -14,12 +14,12 @@ type Process struct {
 	Details *Details
 	PID     int
 
-	Stdin  *os.File
-	Stdout *os.File
-	Stderr *os.File
+	Stdin  io.Writer
+	Stdout io.Reader
+	Stderr io.Reader
 
 	State *os.ProcessState
-	Done  bool
+	Done  chan bool
 
 	proc    *os.Process
 	stdin   *os.File
@@ -78,12 +78,14 @@ func (p *Process) Start() (e error) {
 			})
 		}
 
+		p.Done = make(chan bool)
+
 		go func() {
 			var wErr error
 			if p.State, wErr = p.Wait(); wErr != nil {
 				panic(fmt.Sprintf("Error waiting for Process: %v", e))
 			}
-			p.Done = true
+			close(p.Done)
 		}()
 	}
 	return
